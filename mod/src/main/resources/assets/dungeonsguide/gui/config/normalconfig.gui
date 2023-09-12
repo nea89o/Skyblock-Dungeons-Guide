@@ -44,7 +44,7 @@
                             </aspectRatio>
                             <padding left="5" top="5" bottom="5" right="5">
                                 <row>
-                                    <Text text="Dungeons Guide v" color="0xFFFFFFFF"/>
+                                    <Text text="Dungeons Guide (without auth) v" color="0xFFFFFFFF"/>
                                     <Text bind:text="version" color="#FFFFFFFF"/>
                                     <Text text=" By syeyoung" color="#FFFFFFFF"/>
                                 </row>

@@ -32,6 +32,7 @@ import kr.syeyoung.dungeonsguide.launcher.gui.screen.WidgetPrivacyPolicy;
 import kr.syeyoung.dungeonsguide.launcher.gui.tooltip.Notification;
 import kr.syeyoung.dungeonsguide.launcher.gui.tooltip.NotificationManager;
 import kr.syeyoung.dungeonsguide.launcher.gui.tooltip.WidgetNotification;
+import kr.syeyoung.dungeonsguide.launcher.gui.tooltip.WidgetNotificationAutoClose;
 import kr.syeyoung.dungeonsguide.launcher.guiv2.GuiScreenAdapter;
 import kr.syeyoung.dungeonsguide.launcher.guiv2.elements.GlobalHUDScale;
 import net.minecraft.client.Minecraft;
@@ -116,57 +117,6 @@ public class AuthManager {
     private static final UUID privacyPolicyRequired = UUID.randomUUID();
 
     AuthToken reAuth() {
-        if (reauthLock) {
-            while (reauthLock) ;
-            return currentToken;
-        }
-
-        reauthLock = true;
-
-        try {
-            String token = DgAuthUtil.requestAuth();
-            byte[] encSecret = DgAuthUtil.checkSessionAuthenticityAndReturnEncryptedSecret(token);
-            currentToken = DgAuthUtil.verifyAuth(token, encSecret);
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                MinecraftForge.EVENT_BUS.post(new AuthChangedEvent(currentToken));
-            });
-
-
-            if (currentToken instanceof PrivacyPolicyRequiredToken) {
-                GuiDisplayer.INSTANCE.displayGui(new GuiScreenAdapter(new GlobalHUDScale(new WidgetPrivacyPolicy())));
-                throw new PrivacyPolicyRequiredException();
-            }
-
-
-            NotificationManager.getInstance().removeNotification(authenticationFailure);
-            NotificationManager.getInstance().removeNotification(privacyPolicyRequired);
-        } catch (Exception e) {
-            if (e instanceof PrivacyPolicyRequiredException) {
-                NotificationManager.getInstance().removeNotification(authenticationFailure);
-                NotificationManager.getInstance().updateNotification(privacyPolicyRequired, new WidgetNotification(privacyPolicyRequired, Notification.builder()
-                        .title("Privacy Policy")
-                        .description("Please accept Dungeons Guide\nPrivacy Policy to enjoy server based\nfeatures of Dungeons Guide\n\n(Including Auto-Update/Remote-Jar)")
-                        .titleColor(0xFFFF0000)
-                        .onClick(() -> {
-                            GuiDisplayer.INSTANCE.displayGui(new GuiScreenAdapter(new GlobalHUDScale(new WidgetPrivacyPolicy())));
-                        })
-                        .build()));
-            } else {
-                currentToken = new FailedAuthToken(e);
-                NotificationManager.getInstance().updateNotification(authenticationFailure, new WidgetNotification(authenticationFailure, Notification.builder()
-                        .title("Auth Error")
-                        .description("Authentication Error Occurred\n"+e.getMessage())
-                        .titleColor(0xFFFF0000)
-                        .onClick(() -> {
-                            GuiDisplayer.INSTANCE.displayGui(new GuiScreenAdapter(new GlobalHUDScale(new WidgetError(e))));
-                        })
-                        .build()));
-            }
-            logger.error("Re-auth failed with message {}, trying again in a 2 seconds", String.valueOf(Throwables.getRootCause(e)));
-            throw new AuthFailedException(e);
-        } finally {
-            reauthLock = false;
-        }
         return currentToken;
     }
 
